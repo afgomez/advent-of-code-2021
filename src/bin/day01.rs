@@ -1,7 +1,7 @@
 use aoc::input::read_input;
 
-fn parse_input(input: String) -> Vec<u32> {
-    input.lines().map(|l| l.parse().unwrap()).collect()
+fn parse_input<T: AsRef<str>>(input: T) -> Vec<u32> {
+    input.as_ref().lines().map(|l| l.parse().unwrap()).collect()
 }
 
 // Part 1
@@ -47,7 +47,7 @@ mod tests {
     #[test]
     fn input_parses_correctly() {
         println!("{}", TEST_INPUT);
-        let numbers = parse_input(TEST_INPUT.into());
+        let numbers = parse_input(TEST_INPUT);
         assert_eq!(
             numbers,
             vec![199, 200, 208, 210, 200, 207, 240, 269, 260, 263]
@@ -56,14 +56,14 @@ mod tests {
 
     #[test]
     fn counts_increments() {
-        let numbers = parse_input(TEST_INPUT.into());
+        let numbers = parse_input(TEST_INPUT);
         let increments = count_increments(&numbers);
         assert_eq!(increments, 7);
     }
 
     #[test]
     fn counts_increments_in_triplets() {
-        let numbers = parse_input(TEST_INPUT.into());
+        let numbers = parse_input(TEST_INPUT);
         let increments = count_increments_triplets(&numbers);
         assert_eq!(increments, 5);
     }

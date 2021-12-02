@@ -49,8 +49,9 @@ impl Submarine {
     }
 }
 
-fn parse_input(input: String) -> Vec<Instruction> {
+fn parse_input<T: AsRef<str>>(input: T) -> Vec<Instruction> {
     input
+        .as_ref()
         .lines()
         .map(|line| {
             let mut parts = line.split(' ');
