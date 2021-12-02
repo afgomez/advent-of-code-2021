@@ -2,7 +2,7 @@ use std::env;
 use std::fs::File;
 
 pub fn read_input() -> Result<String, std::io::Error> {
-    let input = env::args().nth(1).unwrap_or("-".into());
+    let input = env::args().nth(1).unwrap_or_else(|| "-".to_owned());
 
     // Try reading from file
     let mut file: Box<dyn std::io::Read> = if input == "-" {

@@ -5,12 +5,12 @@ fn parse_input<T: AsRef<str>>(input: T) -> Vec<u32> {
 }
 
 // Part 1
-fn count_increments(numbers: &Vec<u32>) -> usize {
+fn count_increments(numbers: &[u32]) -> usize {
     numbers.windows(2).filter(|pair| pair[1] > pair[0]).count()
 }
 
 // Part 2
-fn count_increments_triplets(numbers: &Vec<u32>) -> usize {
+fn count_increments_triplets(numbers: &[u32]) -> usize {
     let triplets: Vec<u32> = numbers.windows(3).map(|w| w.iter().sum()).collect();
     count_increments(&triplets)
 }
