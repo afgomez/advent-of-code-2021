@@ -22,21 +22,29 @@ impl From<&str> for Direction {
 struct Instruction(Direction, u32);
 
 struct Submarine {
-    x: u32,
-    y: u32,
+    horizontal_pos: u32,
+    depth: u32,
+    aim: u32,
 }
 
 impl Submarine {
     fn new() -> Self {
-        Submarine { x: 0, y: 0 }
+        Submarine {
+            horizontal_pos: 0,
+            depth: 0,
+            aim: 0,
+        }
     }
 
     fn mv(&mut self, instruction: Instruction) {
         let (direction, amount) = (instruction.0, instruction.1);
         match direction {
-            Direction::Forward => self.x += amount,
-            Direction::Down => self.y += amount,
-            Direction::Up => self.y -= amount,
+            Direction::Forward => {
+                self.horizontal_pos += amount;
+                self.depth += amount * self.aim;
+            }
+            Direction::Down => self.aim += amount,
+            Direction::Up => self.aim -= amount,
         }
     }
 }
@@ -63,7 +71,7 @@ fn main() -> Result<(), std::io::Error> {
         sub.mv(instruction)
     }
 
-    println!("{}", sub.x * sub.y);
+    println!("{}", sub.horizontal_pos * sub.depth);
 
     Ok(())
 }
