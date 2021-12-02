@@ -1,6 +1,6 @@
 use aoc::input::read_input;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum Direction {
     Forward,
     Up,
@@ -18,7 +18,7 @@ impl From<&str> for Direction {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 struct Instruction(Direction, u32);
 
 struct Submarine {
@@ -75,4 +75,58 @@ fn main() -> Result<(), std::io::Error> {
     println!("{}", sub.horizontal_pos * sub.depth);
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn direction_from_string() {
+        assert_eq!(Direction::from("up"), Direction::Up);
+        assert_eq!(Direction::from("down"), Direction::Down);
+        assert_eq!(Direction::from("forward"), Direction::Forward);
+    }
+
+    #[test]
+    #[should_panic]
+    fn direction_from_random_string_fails() {
+        Direction::from("foobar");
+    }
+
+    const TEST_INPUT: &str = "forward 5\n\
+        down 5\n\
+        forward 8\n\
+        up 3\n\
+        down 8\n\
+        forward 2";
+
+    #[test]
+    fn parses_input() {
+        let instructions = parse_input(TEST_INPUT);
+        assert_eq!(
+            instructions,
+            vec![
+                Instruction(Direction::Forward, 5),
+                Instruction(Direction::Down, 5),
+                Instruction(Direction::Forward, 8),
+                Instruction(Direction::Up, 3),
+                Instruction(Direction::Down, 8),
+                Instruction(Direction::Forward, 2),
+            ]
+        );
+    }
+
+    #[test]
+    fn moves_the_submarine() {
+        let instructions = parse_input(TEST_INPUT);
+        let mut submarine = Submarine::new();
+
+        for instruction in instructions {
+            submarine.mv(instruction);
+        }
+
+        assert_eq!(submarine.horizontal_pos, 15);
+        assert_eq!(submarine.depth, 60);
+    }
 }
