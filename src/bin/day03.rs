@@ -59,48 +59,46 @@ impl Telemetry {
     }
 
     fn life_support(&self) -> usize {
-        let mut entries = self.entries.to_vec();
-        for pos in 0..self.entry_len {
-            let (entries_with_zero, entries_with_one) = partition_by_bit_at_pos(&entries, pos);
+        let o2 = usize::from_str_radix(
+            &find_entry(&self.entries, self.entry_len, |zeroes, ones| ones >= zeroes),
+            2,
+        )
+        .unwrap();
 
-            entries = if entries_with_one.len() >= entries_with_zero.len() {
-                entries_with_one
-            } else {
-                entries_with_zero
-            };
-
-            if entries.len() == 1 {
-                break;
-            }
-        }
-        let o2 = usize::from_str_radix(&entries[0], 2).unwrap();
-
-        let mut entries = self.entries.to_vec();
-        for pos in 0..self.entry_len {
-            let (entries_with_zero, entries_with_one) = partition_by_bit_at_pos(&entries, pos);
-
-            entries = if entries_with_one.len() < entries_with_zero.len() {
-                entries_with_one
-            } else {
-                entries_with_zero
-            };
-
-            if entries.len() == 1 {
-                break;
-            }
-        }
-
-        let co2 = usize::from_str_radix(&entries[0], 2).unwrap();
+        let co2 = usize::from_str_radix(
+            &find_entry(&self.entries, self.entry_len, |zeroes, ones| zeroes > ones),
+            2,
+        )
+        .unwrap();
 
         o2 * co2
     }
 }
 
-fn partition_by_bit_at_pos(entries: &Vec<String>, pos: usize) -> (Vec<String>, Vec<String>) {
-    entries
-        .to_vec()
-        .into_iter()
-        .partition(|entry| entry.chars().nth(pos).unwrap() == '0')
+fn find_entry<F: Fn(usize, usize) -> bool>(
+    entries: &Vec<String>,
+    entry_len: usize,
+    bit_comparator: F,
+) -> String {
+    let mut entries = entries.to_vec();
+    for pos in 0..entry_len {
+        let (entries_with_zero, entries_with_one): (Vec<_>, Vec<_>) = entries
+            .to_vec()
+            .into_iter()
+            .partition(|entry| entry.chars().nth(pos).unwrap() == '0');
+
+        entries = if bit_comparator(entries_with_zero.len(), entries_with_one.len()) {
+            entries_with_one
+        } else {
+            entries_with_zero
+        };
+
+        if entries.len() == 1 {
+            break;
+        }
+    }
+
+    entries.pop().unwrap()
 }
 
 fn main() -> Result<(), std::io::Error> {
