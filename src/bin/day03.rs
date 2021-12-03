@@ -34,12 +34,67 @@ fn calculate_consumption<T: AsRef<str>>(data: T) -> u32 {
     gamma_rate * epsilon_rate
 }
 
+fn calculate_life_support<T: AsRef<str>>(data: T) -> u32 {
+    let data = data.as_ref();
+    // AKA entry_length
+    let bits_per_entry = data.find('\n').unwrap_or(0);
+
+    let mut filtered: Vec<_> = data.lines().collect();
+
+    // Calculate oxigen
+    for i in 0..bits_per_entry {
+        let (leading_ones, leading_zeroes): (Vec<_>, Vec<_>) =
+            filtered.iter().partition(|&entry| {
+                let bit = entry.chars().nth(i).unwrap();
+                bit == '1'
+            });
+
+        if leading_ones.len() >= leading_zeroes.len() {
+            filtered = leading_ones;
+        } else {
+            filtered = leading_zeroes;
+        }
+
+        if filtered.len() == 1 {
+            break;
+        }
+    }
+
+    let oxigen = u32::from_str_radix(filtered.get(0).unwrap(), 2).unwrap();
+
+    // Calculate co2
+    let mut filtered: Vec<_> = data.lines().collect();
+    for i in 0..bits_per_entry {
+        let (leading_ones, leading_zeroes): (Vec<_>, Vec<_>) =
+            filtered.iter().partition(|&entry| {
+                let bit = entry.chars().nth(i).unwrap();
+                bit == '1'
+            });
+
+        if leading_ones.len() < leading_zeroes.len() {
+            filtered = leading_ones;
+        } else {
+            filtered = leading_zeroes;
+        }
+
+        if filtered.len() == 1 {
+            break;
+        }
+    }
+
+    let co2 = u32::from_str_radix(filtered.get(0).unwrap(), 2).unwrap();
+
+    oxigen * co2
+}
+
 fn main() -> Result<(), std::io::Error> {
     let input = read_input()?;
-    let consumption = calculate_consumption(input);
+    let consumption = calculate_consumption(&input);
+
+    let life_support = calculate_life_support(&input);
 
     println!("{}", consumption);
-
+    println!("{}", life_support);
     Ok(())
 }
 
@@ -63,5 +118,10 @@ mod tests {
     #[test]
     fn it_calcualtes_consumption() {
         assert_eq!(calculate_consumption(TEST_INPUT), 198);
+    }
+
+    #[test]
+    fn it_calculates_life_support() {
+        assert_eq!(calculate_life_support(TEST_INPUT), 230);
     }
 }
