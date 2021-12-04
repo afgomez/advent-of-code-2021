@@ -57,16 +57,91 @@ impl BingoGame {
 
         BingoGame { draws, boards }
     }
+
+    fn play(&mut self) -> (Option<Board>, u32) {
+        for number in &self.draws {
+            for board in &mut self.boards {
+                board.mark(*number);
+                if board.is_winner() {
+                    // FIXME figure out how to return a reference that lives long enough instead of cloning.
+                    return (Some(board.clone()), *number);
+                }
+            }
+        }
+        (None, 0)
+    }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
+struct MarkedNumber(u32, bool);
+
+impl MarkedNumber {
+    fn new(n: u32) -> Self {
+        MarkedNumber(n, false)
+    }
+    fn mark(&mut self) {
+        self.1 = true;
+    }
+    fn unmark(&mut self) {
+        self.1 = false;
+    }
+}
+
+impl From<u32> for MarkedNumber {
+    fn from(n: u32) -> Self {
+        MarkedNumber::new(n)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
 struct Board {
-    rows: Vec<Vec<u32>>,
+    rows: Vec<Vec<MarkedNumber>>,
 }
 
 impl Board {
     fn new(rows: Vec<Vec<u32>>) -> Self {
-        Board { rows }
+        Board {
+            rows: rows
+                .into_iter()
+                .map(|row| row.into_iter().map(|n| n.into()).collect())
+                .collect(),
+        }
+    }
+
+    fn mark(&mut self, drawn_number: u32) {
+        for row in &mut self.rows {
+            if let Some(marked_number) =
+                row.iter_mut()
+                    .find_map(|n| if n.0 == drawn_number { Some(n) } else { None })
+            {
+                (*marked_number).mark();
+                break;
+            }
+        }
+    }
+
+    fn is_winner(&self) -> bool {
+        for (i, row) in self.rows.iter().enumerate() {
+            // Check the row
+            if row.iter().all(|n| n.1 == true) {
+                return true;
+            }
+
+            // Check the column
+            if self.rows.iter().map(|r| &r[i]).all(|n| n.1 == true) {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    fn score(&self) -> u32 {
+        self.rows
+            .iter()
+            .flatten()
+            .filter_map(|MarkedNumber(n, marked)| if *marked { None } else { Some(n) })
+            .sum()
     }
 }
 
@@ -134,5 +209,49 @@ mod tests {
                 ])
             ]
         );
+    }
+
+    #[test]
+    fn it_marks_numbers_in_board() {
+        let mut board = Board::new(vec![vec![1, 2, 3]]);
+
+        board.mark(1);
+        assert_eq!(
+            board.rows,
+            vec![vec![
+                MarkedNumber(1, true),
+                MarkedNumber(2, false),
+                MarkedNumber(3, false)
+            ]]
+        )
+    }
+
+    #[test]
+    fn it_marks_board_as_winner_when_row_is_full() {
+        let mut board = Board::new(vec![vec![1, 2, 3], vec![4, 5, 6]]);
+        assert!(!board.is_winner());
+        board.mark(1);
+        assert!(!board.is_winner());
+        board.mark(2);
+        board.mark(3);
+        assert!(board.is_winner());
+    }
+
+    #[test]
+    fn it_marks_board_as_winner_when_column_is_full() {
+        let mut board = Board::new(vec![vec![1, 2, 3], vec![4, 5, 6]]);
+        assert!(!board.is_winner());
+        board.mark(1);
+        board.mark(4);
+        assert!(board.is_winner());
+    }
+
+    #[test]
+    fn it_plays_until_a_board_wins() {
+        let mut bingo_game = BingoGame::from(TEST_INPUT);
+
+        let (winning_board, last_number) = bingo_game.play();
+        assert_eq!(last_number, 24);
+        assert_eq!(winning_board.unwrap().score(), 188);
     }
 }
