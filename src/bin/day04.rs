@@ -70,6 +70,43 @@ impl BingoGame {
         }
         (None, 0)
     }
+
+    fn play_last(&mut self) -> (Option<Board>, u32) {
+        let mut winning_boards: Vec<usize> = Vec::with_capacity(self.boards.len());
+        let mut boards = self.boards.clone();
+        let board_count = self.boards.len();
+
+        for number in &self.draws {
+            for (i, board) in boards.iter_mut().enumerate() {
+                // FIXME ??
+                if winning_boards.contains(&i) {
+                    continue;
+                };
+
+                board.mark(*number);
+
+                if board.is_winner() {
+                    winning_boards.push(i);
+                }
+
+                if winning_boards.len() == board_count {
+                    return (Some(board.clone()), *number);
+                }
+            }
+        }
+
+        if winning_boards.len() > 0 {
+            let cloned_board = self
+                .boards
+                .get(*winning_boards.last().unwrap())
+                .unwrap()
+                .clone();
+
+            (Some(cloned_board), *self.draws.last().unwrap())
+        } else {
+            (None, 0)
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -145,7 +182,17 @@ impl Board {
     }
 }
 
-fn main() {}
+fn main() -> Result<(), std::io::Error> {
+    let input = read_input()?;
+    let mut bingo_game = BingoGame::from(input);
+
+    let (winning_board, last_number) = bingo_game.play_last();
+    if let Some(board) = winning_board {
+        println!("{}", board.score() * last_number);
+    }
+
+    Ok(())
+}
 
 #[cfg(test)]
 mod tests {
@@ -253,5 +300,14 @@ mod tests {
         let (winning_board, last_number) = bingo_game.play();
         assert_eq!(last_number, 24);
         assert_eq!(winning_board.unwrap().score(), 188);
+    }
+
+    #[test]
+    fn it_plays_until_all_boards_win() {
+        let mut bingo_game = BingoGame::from(TEST_INPUT);
+
+        let (last_winning_board, winning_number) = bingo_game.play_last();
+        assert_eq!(winning_number, 13);
+        assert_eq!(last_winning_board.unwrap().score(), 148);
     }
 }
