@@ -9,7 +9,7 @@ impl BingoGame {
     fn from<T: AsRef<str>>(input: T) -> BingoGame {
         let input = input.as_ref();
 
-        if input.len() == 0 {
+        if input.is_empty() {
             return BingoGame {
                 draws: vec![],
                 boards: vec![],
@@ -32,11 +32,11 @@ impl BingoGame {
         let mut boards: Vec<Board> = vec![];
         let mut rows: Vec<Vec<u32>> = vec![];
 
-        while let Some(line) = lines.next() {
+        for line in lines {
             let line = line.trim();
 
             // Create a board with the collected rows when we find an empty line
-            if line.len() == 0 {
+            if line.is_empty() {
                 let board = Board::new(rows.to_vec());
                 boards.push(board);
                 rows.clear();
@@ -50,7 +50,7 @@ impl BingoGame {
         }
 
         // Make board with the last rows
-        if rows.len() > 0 {
+        if !rows.is_empty() {
             let board = Board::new(rows.to_vec());
             boards.push(board);
         }
@@ -95,7 +95,7 @@ impl BingoGame {
             }
         }
 
-        if winning_boards.len() > 0 {
+        if !winning_boards.is_empty() {
             let cloned_board = self
                 .boards
                 .get(*winning_boards.last().unwrap())
@@ -118,9 +118,6 @@ impl MarkedNumber {
     }
     fn mark(&mut self) {
         self.1 = true;
-    }
-    fn unmark(&mut self) {
-        self.1 = false;
     }
 }
 
@@ -160,12 +157,12 @@ impl Board {
     fn is_winner(&self) -> bool {
         for (i, row) in self.rows.iter().enumerate() {
             // Check the row
-            if row.iter().all(|n| n.1 == true) {
+            if row.iter().all(|n| n.1) {
                 return true;
             }
 
             // Check the column
-            if self.rows.iter().map(|r| &r[i]).all(|n| n.1 == true) {
+            if self.rows.iter().map(|r| &r[i]).all(|n| n.1) {
                 return true;
             }
         }

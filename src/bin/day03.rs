@@ -21,7 +21,7 @@ impl Telemetry {
 
     fn parse<T: AsRef<str>>(&mut self, input: T) {
         let entries: Vec<String> = input.as_ref().lines().map(str::to_owned).collect();
-        let entry_len = if entries.len() == 0 {
+        let entry_len = if entries.is_empty() {
             0
         } else {
             entries.get(0).unwrap().len()
