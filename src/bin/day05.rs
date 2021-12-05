@@ -1,5 +1,4 @@
 use aoc::input::read_input;
-use std::cmp::{max, min};
 use std::fmt::Debug;
 
 fn main() -> Result<(), std::io::Error> {
@@ -43,20 +42,12 @@ impl VentField {
     }
 
     fn overlaps(&self) -> usize {
-        let mut field = vec![vec![0_u32; self.dimensions.1]; self.dimensions.0];
+        let mut field = vec![vec![0_u32; self.dimensions.0]; self.dimensions.1];
 
         for line in &self.lines {
-            if line.is_horizontal() {
-                let start = min(line.0 .1, line.1 .1);
-                let end = max(line.0 .1, line.1 .1);
-                for y in start..=end {
-                    field[line.0 .0][y] += 1
-                }
-            } else if line.is_vertical() {
-                let start = min(line.0 .0, line.1 .0);
-                let end = max(line.0 .0, line.1 .0);
-                for x in start..=end {
-                    field[x][line.0 .1] += 1
+            if let Some(points) = line.points() {
+                for (x, y) in points {
+                    field[y][x] += 1;
                 }
             }
         }
@@ -75,6 +66,48 @@ impl Line {
 
     fn is_vertical(&self) -> bool {
         self.0 .1 == self.1 .1
+    }
+
+    fn is_diagonal(&self) -> bool {
+        let x_diff = self.0 .0 as i32 - self.1 .0 as i32;
+        let y_diff = self.0 .1 as i32 - self.1 .1 as i32;
+
+        x_diff.abs() == y_diff.abs()
+    }
+
+    // TODO Make this return an iterator instead
+    fn points(&self) -> Option<Vec<(usize, usize)>> {
+        if !self.is_vertical() && !self.is_horizontal() && !self.is_diagonal() {
+            return None;
+        }
+
+        let mut points = vec![];
+
+        let mut x = self.0 .0;
+        let mut y = self.0 .1;
+
+        while (x, y) != self.1 {
+            points.push((x, y));
+
+            x = if x > self.1 .0 {
+                x - 1
+            } else if x < self.1 .0 {
+                x + 1
+            } else {
+                x
+            };
+
+            y = if y > self.1 .1 {
+                y - 1
+            } else if y < self.1 .1 {
+                y + 1
+            } else {
+                y
+            };
+        }
+
+        points.push(self.1);
+        Some(points)
     }
 }
 
@@ -136,6 +169,21 @@ mod tests {
         assert!(line.is_vertical());
     }
 
+    #[test]
+    fn it_detects_diagonal_lines() {
+        let line = Line((0, 0), (0, 9));
+        assert!(!line.is_diagonal());
+
+        let line = Line((0, 0), (9, 9));
+        assert!(line.is_diagonal());
+
+        let line = Line((9, 9), (0, 0));
+        assert!(line.is_diagonal());
+
+        let line = Line((9, 9), (0, 1));
+        assert!(!line.is_diagonal());
+    }
+
     const TEST_INPUT: &str = "0,9 -> 5,9
 8,0 -> 0,8
 9,4 -> 3,4
@@ -156,6 +204,6 @@ mod tests {
     #[test]
     fn it_calculates_line_overlaps() {
         let vent_field = VentField::from(TEST_INPUT);
-        assert_eq!(vent_field.overlaps(), 5);
+        assert_eq!(vent_field.overlaps(), 12);
     }
 }
