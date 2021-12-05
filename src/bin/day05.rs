@@ -98,12 +98,11 @@ impl Line {
 impl<T: AsRef<str> + Debug> From<T> for Line {
     fn from(line: T) -> Line {
         let pairs: Vec<&str> = line.as_ref().split(" -> ").collect();
-        if pairs.len() != 2 {
-            panic!("ParseError: Cannot parse line: {:?}", &line);
-        }
 
-        let start = parse_point(pairs.get(0).unwrap());
-        let end = parse_point(pairs.get(1).unwrap());
+        let (start, end) = match pairs[..] {
+            [a, b] => (parse_point(a), parse_point(b)),
+            _ => panic!("ParseError: Cannot parse line: {:?}", &line),
+        };
 
         Line(start, end)
     }
