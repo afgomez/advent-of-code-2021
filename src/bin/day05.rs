@@ -1,4 +1,5 @@
 use aoc::input::read_input;
+use std::cmp::Ordering;
 use std::fmt::Debug;
 
 fn main() -> Result<(), std::io::Error> {
@@ -37,7 +38,7 @@ impl VentField {
 
         VentField {
             lines,
-            dimensions: (max_x.try_into().unwrap(), max_y.try_into().unwrap()),
+            dimensions: (max_x, max_y),
         }
     }
 
@@ -89,20 +90,16 @@ impl Line {
         while (x, y) != self.1 {
             points.push((x, y));
 
-            x = if x > self.1 .0 {
-                x - 1
-            } else if x < self.1 .0 {
-                x + 1
-            } else {
-                x
+            x = match x.cmp(&self.1 .0) {
+                Ordering::Greater => x - 1,
+                Ordering::Less => x + 1,
+                Ordering::Equal => x,
             };
 
-            y = if y > self.1 .1 {
-                y - 1
-            } else if y < self.1 .1 {
-                y + 1
-            } else {
-                y
+            y = match y.cmp(&self.1 .1) {
+                Ordering::Greater => y - 1,
+                Ordering::Less => y + 1,
+                Ordering::Equal => y,
             };
         }
 
@@ -130,8 +127,8 @@ fn parse_point(point: &str) -> (usize, usize) {
         .split(',')
         .map(|n| n.trim().parse().unwrap())
         .collect();
-    match &points[..] {
-        &[x, y] => (x, y),
+    match points[..] {
+        [x, y] => (x, y),
         _ => panic!("ParseError: Cannot parse point: {}", point),
     }
 }
