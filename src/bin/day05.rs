@@ -34,11 +34,9 @@ impl VentField {
         let mut field: HashMap<Point, u32> = HashMap::new();
 
         for line in &self.lines {
-            if let Some(points) = line.points() {
-                for point in points {
-                    let count = field.entry(point).or_insert(0);
-                    *count += 1;
-                }
+            for point in line.points() {
+                let count = field.entry(point).or_insert(0);
+                *count += 1;
             }
         }
 
@@ -66,34 +64,12 @@ impl Line {
     }
 
     // TODO Make this return an iterator instead
-    fn points(&self) -> Option<Vec<Point>> {
+    fn points(&self) -> Points {
         if !self.is_vertical() && !self.is_horizontal() && !self.is_diagonal() {
-            return None;
+            return Points::empty();
         }
 
-        let mut points = vec![];
-
-        let mut x = self.0 .0;
-        let mut y = self.0 .1;
-
-        while (x, y) != self.1 {
-            points.push((x, y));
-
-            x = match x.cmp(&self.1 .0) {
-                Ordering::Greater => x - 1,
-                Ordering::Less => x + 1,
-                Ordering::Equal => x,
-            };
-
-            y = match y.cmp(&self.1 .1) {
-                Ordering::Greater => y - 1,
-                Ordering::Less => y + 1,
-                Ordering::Equal => y,
-            };
-        }
-
-        points.push(self.1);
-        Some(points)
+        Points::from(self)
     }
 }
 
@@ -107,6 +83,59 @@ impl<T: AsRef<str> + Debug> From<T> for Line {
         };
 
         Line(start, end)
+    }
+}
+
+struct Points {
+    next: Option<Point>,
+    end: Point,
+}
+
+impl Points {
+    fn empty() -> Self {
+        Points {
+            next: None,
+            end: (0, 0),
+        }
+    }
+}
+
+impl From<&Line> for Points {
+    fn from(line: &Line) -> Points {
+        Points {
+            next: Some(line.0),
+            end: line.1,
+        }
+    }
+}
+
+impl Iterator for Points {
+    type Item = Point;
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(current) = self.next {
+            if current == self.end {
+                self.next.take()
+            } else {
+                let (mut x, mut y) = current;
+
+                x = match x.cmp(&self.end.0) {
+                    Ordering::Greater => x - 1,
+                    Ordering::Less => x + 1,
+                    Ordering::Equal => x,
+                };
+
+                y = match y.cmp(&self.end.1) {
+                    Ordering::Greater => y - 1,
+                    Ordering::Less => y + 1,
+                    Ordering::Equal => y,
+                };
+                self.next = Some((x, y));
+
+                Some(current)
+            }
+        } else {
+            None
+        }
     }
 }
 
@@ -167,6 +196,29 @@ mod tests {
 
         let line = Line((9, 9), (0, 1));
         assert!(!line.is_diagonal());
+    }
+
+    #[test]
+    fn it_correctly_makes_points() {
+        let line = Line((0, 1), (0, 3));
+        let points: Vec<_> = line.points().collect();
+        assert_eq!(points, [(0, 1), (0, 2), (0, 3)]);
+
+        let line = Line((1, 0), (3, 0));
+        let points: Vec<_> = line.points().collect();
+        assert_eq!(points, [(1, 0), (2, 0), (3, 0)]);
+
+        let line = Line((1, 0), (2, 1));
+        let points: Vec<_> = line.points().collect();
+        assert_eq!(points, [(1, 0), (2, 1)]);
+
+        let line = Line((3, 1), (1, 3));
+        let points: Vec<_> = line.points().collect();
+        assert_eq!(points, [(3, 1), (2, 2), (1, 3)]);
+
+        let line = Line((1, 0), (3, 4));
+        let points: Vec<_> = line.points().collect();
+        assert_eq!(points, []);
     }
 
     const TEST_INPUT: &str = "0,9 -> 5,9
