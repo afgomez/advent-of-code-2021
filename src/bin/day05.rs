@@ -1,5 +1,6 @@
 use aoc::input::read_input;
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::fmt::Debug;
 
 fn main() -> Result<(), std::io::Error> {
@@ -13,7 +14,6 @@ fn main() -> Result<(), std::io::Error> {
 
 struct VentField {
     lines: Vec<Line>,
-    dimensions: (usize, usize),
 }
 
 impl<T: AsRef<str>> From<T> for VentField {
@@ -25,35 +25,22 @@ impl<T: AsRef<str>> From<T> for VentField {
 
 impl VentField {
     fn new(lines: Vec<Line>) -> Self {
-        let (mut max_x, mut max_y) = (0, 0);
-
-        for line in &lines {
-            max_x = max_x.max(line.0 .0).max(line.1 .0);
-            max_y = max_y.max(line.1 .0).max(line.1 .1);
-        }
-
-        // Line indices start at 0, so we need an extra coordinate to accomodate the right size
-        max_x += 1;
-        max_y += 1;
-
-        VentField {
-            lines,
-            dimensions: (max_x, max_y),
-        }
+        VentField { lines }
     }
 
     fn overlaps(&self) -> usize {
-        let mut field = vec![vec![0_u32; self.dimensions.0]; self.dimensions.1];
+        let mut field: HashMap<(usize, usize), u32> = HashMap::new();
 
         for line in &self.lines {
             if let Some(points) = line.points() {
-                for (x, y) in points {
-                    field[y][x] += 1;
+                for point in points {
+                    let count = field.entry(point).or_insert(0);
+                    *count += 1;
                 }
             }
         }
 
-        field.into_iter().flatten().filter(|n| *n > 1).count()
+        field.values().filter(|&n| *n > 1).count()
     }
 }
 
@@ -191,12 +178,6 @@ mod tests {
 3,4 -> 1,4
 0,0 -> 8,8
 5,5 -> 8,2";
-
-    #[test]
-    fn it_calculates_field_size() {
-        let vent_field = VentField::from(TEST_INPUT);
-        assert_eq!(vent_field.dimensions, (10, 10));
-    }
 
     #[test]
     fn it_calculates_line_overlaps() {
