@@ -12,6 +12,8 @@ fn main() -> Result<(), std::io::Error> {
     Ok(())
 }
 
+type Point = (usize, usize);
+
 struct VentField {
     lines: Vec<Line>,
 }
@@ -29,7 +31,7 @@ impl VentField {
     }
 
     fn overlaps(&self) -> usize {
-        let mut field: HashMap<(usize, usize), u32> = HashMap::new();
+        let mut field: HashMap<Point, u32> = HashMap::new();
 
         for line in &self.lines {
             if let Some(points) = line.points() {
@@ -45,7 +47,7 @@ impl VentField {
 }
 
 #[derive(Debug, PartialEq)]
-struct Line((usize, usize), (usize, usize));
+struct Line(Point, Point);
 
 impl Line {
     fn is_horizontal(&self) -> bool {
@@ -64,7 +66,7 @@ impl Line {
     }
 
     // TODO Make this return an iterator instead
-    fn points(&self) -> Option<Vec<(usize, usize)>> {
+    fn points(&self) -> Option<Vec<Point>> {
         if !self.is_vertical() && !self.is_horizontal() && !self.is_diagonal() {
             return None;
         }
@@ -108,7 +110,7 @@ impl<T: AsRef<str> + Debug> From<T> for Line {
     }
 }
 
-fn parse_point(point: &str) -> (usize, usize) {
+fn parse_point(point: &str) -> Point {
     let points: Vec<usize> = point
         .split(',')
         .map(|n| n.trim().parse().unwrap())
