@@ -63,7 +63,6 @@ impl Line {
         x_diff.abs() == y_diff.abs()
     }
 
-    // TODO Make this return an iterator instead
     fn points(&self) -> Points {
         if !self.is_vertical() && !self.is_horizontal() && !self.is_diagonal() {
             return Points::empty();
@@ -112,10 +111,9 @@ impl From<&Line> for Points {
 impl Iterator for Points {
     type Item = Point;
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(current) = self.next {
-            if current == self.end {
-                self.next.take()
-            } else {
+        match self.next {
+            Some(current) if current == self.end => self.next.take(),
+            Some(current) => {
                 let (mut x, mut y) = current;
 
                 x = match x.cmp(&self.end.0) {
@@ -133,8 +131,7 @@ impl Iterator for Points {
 
                 Some(current)
             }
-        } else {
-            None
+            None => None,
         }
     }
 }
