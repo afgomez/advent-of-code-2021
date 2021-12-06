@@ -3,7 +3,7 @@ use aoc::input::read_input;
 fn main() -> Result<(), std::io::Error> {
     let input = read_input()?;
     let mut simulator = FishSimulator::from(input);
-    simulator.advance(80);
+    simulator.advance(256);
 
     println!("{}", simulator.count());
 
