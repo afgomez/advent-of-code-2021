@@ -1,5 +1,4 @@
 use std::cmp::{max, min};
-use std::collections::HashMap;
 
 use aoc::input::read_input;
 
@@ -20,12 +19,17 @@ struct CrabArmy {
 
 impl CrabArmy {
     fn sim_align(&self) -> u64 {
-        let mid_point = &self.positions[self.positions.len() / 2];
+        let avg_point = self.positions.iter().sum::<u64>() / self.positions.len() as u64;
 
-        self.positions
-            .iter()
-            .map(|p| max(p, mid_point) - min(p, mid_point))
-            .sum()
+        (avg_point - 1..=avg_point + 1)
+            .map(|avg| {
+                self.positions
+                    .iter()
+                    .map(|p| seq_sum(max(avg, *p) - min(avg, *p)))
+                    .sum()
+            })
+            .min()
+            .unwrap()
     }
 }
 
@@ -42,6 +46,11 @@ impl<T: AsRef<str>> From<T> for CrabArmy {
     }
 }
 
+/// Calculates the sum of 1 + 2 + ... + n
+fn seq_sum(n: u64) -> u64 {
+    (n * (1 + n)) / 2
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -51,6 +60,6 @@ mod tests {
     #[test]
     fn it_calculates_fuel_to_align() {
         let army = CrabArmy::from(TEST_INPUT);
-        assert_eq!(army.sim_align(), 37);
+        assert_eq!(army.sim_align(), 168);
     }
 }
