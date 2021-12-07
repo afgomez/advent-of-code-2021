@@ -183,6 +183,11 @@ fn main() -> Result<(), std::io::Error> {
     let input = read_input()?;
     let mut bingo_game = BingoGame::from(input);
 
+    let (winning_board, last_number) = bingo_game.play();
+    if let Some(board) = winning_board {
+        println!("{}", board.score() * last_number);
+    }
+
     let (winning_board, last_number) = bingo_game.play_last();
     if let Some(board) = winning_board {
         println!("{}", board.score() * last_number);

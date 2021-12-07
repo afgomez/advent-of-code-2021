@@ -76,7 +76,7 @@ impl Telemetry {
 }
 
 fn find_entry<F: Fn(usize, usize) -> bool>(
-    entries: &Vec<String>,
+    entries: &[String],
     entry_len: usize,
     bit_comparator: F,
 ) -> String {
