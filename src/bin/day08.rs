@@ -284,6 +284,7 @@ gcafb gcf dcaebfg ecagb gf abcdeg gaef cafbge fdbac fegbdc | fgae cfgab fg bagce
         assert_eq!(decoder.count_known_numbers(), 26);
     }
 
+    #[test]
     fn it_sums_outputs() {
         let mut decoder = Decoder::from(TEST_INPUT);
         decoder.decode();
