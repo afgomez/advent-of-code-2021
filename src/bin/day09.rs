@@ -7,6 +7,9 @@ fn main() -> Result<(), std::io::Error> {
     let risk_level_sum = map.risk_level_sum();
     println!("{}", risk_level_sum);
 
+    let biggest_basins_product = map.biggest_basins_product();
+    println!("{}", biggest_basins_product);
+
     Ok(())
 }
 
@@ -33,6 +36,51 @@ impl HeightMap {
         }
 
         points
+    }
+
+    fn biggest_basins_product(&self) -> u32 {
+        let mut exploration_map = vec![vec![false; self.grid[0].len()]; self.grid.len()];
+
+        let mut basin_sizes: Vec<u32> = self
+            .low_points()
+            .into_iter()
+            .map(|p| self.basin_size(p, &mut exploration_map))
+            .collect();
+
+        basin_sizes.sort_unstable_by(|a, b| b.cmp(a));
+        basin_sizes.into_iter().take(3).product()
+    }
+
+    fn basin_size(&self, (x, y): (usize, usize), exploration_map: &mut Vec<Vec<bool>>) -> u32 {
+        // start from the point, and recursively sum the sizes of the unexplored points
+        if exploration_map[y][x] {
+            return 0;
+        }
+
+        exploration_map[y][x] = true;
+
+        if self.grid[y][x] == 9 {
+            return 0;
+        }
+
+        let mut sum = 1;
+        let (prev_x, prev_y, next_x, next_y) =
+            adjacent_to(x, y, self.grid[0].len() - 1, self.grid.len() - 1);
+
+        if let Some(prev_x) = prev_x {
+            sum += self.basin_size((prev_x, y), exploration_map);
+        }
+        if let Some(prev_y) = prev_y {
+            sum += self.basin_size((x, prev_y), exploration_map);
+        }
+        if let Some(next_x) = next_x {
+            sum += self.basin_size((next_x, y), exploration_map);
+        }
+        if let Some(next_y) = next_y {
+            sum += self.basin_size((x, next_y), exploration_map);
+        }
+
+        sum
     }
 
     fn risk_level_sum(&self) -> u32 {
@@ -100,5 +148,12 @@ mod tests {
     fn it_sums_risk_levels() {
         let map = HeightMap::from(TEST_INPUT);
         assert_eq!(map.risk_level_sum(), 15);
+    }
+
+    #[test]
+    fn it_finds_basin_sizes() {
+        let map = HeightMap::from(TEST_INPUT);
+
+        assert_eq!(map.biggest_basins_product(), 1134);
     }
 }
