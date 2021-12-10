@@ -8,15 +8,18 @@ use aoc::input::read_input;
 lazy_static! {
     static ref PAIR_MAP: HashMap<char, char> =
         HashMap::from([('{', '}'), ('(', ')'), ('[', ']'), ('<', '>')]);
-    static ref SCORE_MAP: HashMap<char, u32> =
+    static ref CORRUPT_SCORE_MAP: HashMap<char, u64> =
         HashMap::from([(')', 3), (']', 57), ('}', 1197), ('>', 25137)]);
+    static ref AUTOCOMPLETE_SCORE_MAP: HashMap<char, u64> =
+        HashMap::from([('(', 1), ('[', 2), ('{', 3), ('<', 4)]);
 }
 
 fn main() -> Result<(), std::io::Error> {
     let input = read_input()?;
     let nav = NavParser::from(input);
 
-    println!("{}", nav.corruption());
+    println!("{}", nav.corruption_score());
+    println!("{}", nav.completion_score());
 
     Ok(())
 }
@@ -26,17 +29,41 @@ struct NavParser {
 }
 
 impl NavParser {
-    fn corruption(&self) -> u32 {
+    fn corruption_score(&self) -> u64 {
         self.lines
             .iter()
             .filter_map(|l| {
                 if l.parse_state == ParseState::Corrupted {
-                    Some(SCORE_MAP[&l.last_parsed])
+                    Some(CORRUPT_SCORE_MAP[&l.last_parsed])
                 } else {
                     None
                 }
             })
             .sum()
+    }
+
+    fn completion_score(&self) -> u64 {
+        let mut scores: Vec<u64> = self
+            .lines
+            .iter()
+            .filter_map(|l| {
+                if l.parse_state == ParseState::Incomplete {
+                    Some(
+                        l.still_open
+                            .as_ref()
+                            .unwrap()
+                            .iter()
+                            .rev()
+                            .fold(0, |score, chr| score * 5 + AUTOCOMPLETE_SCORE_MAP[chr]),
+                    )
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        scores.sort_unstable();
+        scores[scores.len() / 2]
     }
 }
 
@@ -55,9 +82,9 @@ enum ParseState {
 }
 
 struct Line {
-    raw_input: String,
     last_parsed: char,
     parse_state: ParseState,
+    still_open: Option<Vec<char>>,
 }
 
 impl Line {
@@ -75,22 +102,28 @@ impl Line {
                     stack.pop();
                 } else {
                     return Line {
-                        raw_input: String::from(raw_input),
                         last_parsed: chr,
                         parse_state: ParseState::Corrupted,
+                        still_open: None, // It cannot be completed
                     };
                 }
             }
         }
 
-        Line {
-            raw_input: String::from(raw_input),
-            last_parsed: raw_input.chars().last().unwrap(),
-            parse_state: if stack.len() > 0 {
-                ParseState::Incomplete
-            } else {
-                ParseState::Complete
-            },
+        let last_parsed = raw_input.chars().last().unwrap();
+
+        if stack.len() > 0 {
+            Line {
+                last_parsed,
+                parse_state: ParseState::Incomplete,
+                still_open: Some(stack),
+            }
+        } else {
+            Line {
+                last_parsed,
+                parse_state: ParseState::Complete,
+                still_open: None,
+            }
         }
     }
 }
@@ -116,8 +149,15 @@ mod tests {
         assert_eq!(nav.lines.len(), 10);
     }
 
+    #[test]
     fn it_calculates_corrupted_score() {
         let nav = NavParser::from(TEST_INPUT);
-        assert_eq!(nav.corruption(), 26397);
+        assert_eq!(nav.corruption_score(), 26397);
+    }
+
+    #[test]
+    fn it_calculates_autocomplete_score() {
+        let nav = NavParser::from(TEST_INPUT);
+        assert_eq!(nav.completion_score(), 288957);
     }
 }
