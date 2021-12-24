@@ -1,25 +1,27 @@
 use aoc::input::read_input;
 
 #[derive(Debug, PartialEq)]
-enum Direction {
-    Forward,
-    Up,
-    Down,
+enum Instruction {
+    Forward(u32),
+    Up(u32),
+    Down(u32),
 }
 
-impl From<&str> for Direction {
-    fn from(direction: &str) -> Direction {
-        match direction {
-            "forward" => Direction::Forward,
-            "up" => Direction::Up,
-            "down" => Direction::Down,
-            _ => unreachable!(),
+impl From<&str> for Instruction {
+    fn from(input: &str) -> Instruction {
+        if let Some((direction, amount)) = input.trim().split_once(' ') {
+            let amount = amount.parse().unwrap();
+            match direction {
+                "forward" => Self::Forward(amount),
+                "up" => Self::Up(amount),
+                "down" => Self::Down(amount),
+                _ => unreachable!(),
+            }
+        } else {
+            panic!("Unable to parse instruction")
         }
     }
 }
-
-#[derive(Debug, PartialEq)]
-struct Instruction(Direction, u32);
 
 struct Submarine {
     horizontal_pos: u32,
@@ -37,14 +39,13 @@ impl Submarine {
     }
 
     fn mv(&mut self, instruction: Instruction) {
-        let (direction, amount) = (instruction.0, instruction.1);
-        match direction {
-            Direction::Forward => {
+        match instruction {
+            Instruction::Forward(amount) => {
                 self.horizontal_pos += amount;
                 self.depth += amount * self.aim;
             }
-            Direction::Down => self.aim += amount,
-            Direction::Up => self.aim -= amount,
+            Instruction::Down(amount) => self.aim += amount,
+            Instruction::Up(amount) => self.aim -= amount,
         }
     }
 }
@@ -53,12 +54,7 @@ fn parse_input<T: AsRef<str>>(input: T) -> Vec<Instruction> {
     input
         .as_ref()
         .lines()
-        .map(|line| {
-            let mut parts = line.split(' ');
-            let direction: Direction = parts.next().unwrap().into();
-            let amount = parts.next().unwrap().parse().unwrap();
-            Instruction(direction, amount)
-        })
+        .map(|line| Instruction::from(line))
         .collect()
 }
 
@@ -83,22 +79,22 @@ mod tests {
 
     #[test]
     fn direction_from_string() {
-        assert_eq!(Direction::from("up"), Direction::Up);
-        assert_eq!(Direction::from("down"), Direction::Down);
-        assert_eq!(Direction::from("forward"), Direction::Forward);
+        assert_eq!(Instruction::from("up 5"), Instruction::Up(5));
+        assert_eq!(Instruction::from("down 2"), Instruction::Down(2));
+        assert_eq!(Instruction::from("forward 3"), Instruction::Forward(3));
     }
 
     #[test]
     #[should_panic]
     fn direction_from_random_string_fails() {
-        Direction::from("foobar");
+        let _ = Instruction::from("foobar");
     }
 
-    const TEST_INPUT: &str = "forward 5\n\
-        down 5\n\
-        forward 8\n\
-        up 3\n\
-        down 8\n\
+    const TEST_INPUT: &str = "forward 5
+        down 5
+        forward 8
+        up 3
+        down 8
         forward 2";
 
     #[test]
@@ -107,12 +103,12 @@ mod tests {
         assert_eq!(
             instructions,
             vec![
-                Instruction(Direction::Forward, 5),
-                Instruction(Direction::Down, 5),
-                Instruction(Direction::Forward, 8),
-                Instruction(Direction::Up, 3),
-                Instruction(Direction::Down, 8),
-                Instruction(Direction::Forward, 2),
+                Instruction::Forward(5),
+                Instruction::Down(5),
+                Instruction::Forward(8),
+                Instruction::Up(3),
+                Instruction::Down(8),
+                Instruction::Forward(2),
             ]
         );
     }
