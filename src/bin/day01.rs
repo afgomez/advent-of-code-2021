@@ -11,8 +11,7 @@ fn count_increments(numbers: &[u32]) -> usize {
 
 // Part 2
 fn count_increments_triplets(numbers: &[u32]) -> usize {
-    let triplets: Vec<u32> = numbers.windows(3).map(|w| w.iter().sum()).collect();
-    count_increments(&triplets)
+    numbers.windows(4).filter(|col| col[3] > col[0]).count()
 }
 
 fn main() -> Result<(), std::io::Error> {
